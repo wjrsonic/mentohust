@@ -8,8 +8,6 @@
 */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#else
-#define HAVE_ICONV_H
 #endif
 
 #include "myfunc.h"
@@ -87,9 +85,36 @@ char *gbk2utf(char *src, size_t srclen) {
 	}
 	dst[dstlen-left] = '\0';
 #else
-	char *dst = (char *)malloc(srclen+1);
-	memcpy(dst, src, srclen);
-	dst[srclen] = '\0';
+#include "unicode_table.h"
+	uint8_t ch;
+	uint16_t unicode;
+	char *dst = (char*)malloc(srclen*3/2+1), *p = dst;
+	while((ch = (uint8_t)*src))
+	{
+		if(ch < 0x80)
+			unicode = ch;
+		else if(ch >= 0xa1 && ch <= 0xa9)
+			unicode = unicode_table[ch-0xa1][(uint8_t)*(++src)-0xa0];
+		else if(ch >= 0xb0 && ch <= 0xf7)
+			unicode = unicode_table[ch-0xa7][(uint8_t)*(++src)-0xa0];
+		else
+			unicode = '?';
+		src++;
+		if (0x0080 > unicode)
+			*p++ = (uint8_t)unicode;
+		else if (0x0800 > unicode)
+		{
+			*p++ = ((uint8_t)(unicode >> 6)) | 0xc0;
+			*p++ = ((uint8_t)(unicode & 0x003f)) | 0x80;
+		}
+		else
+		{
+			*p++ = ((uint8_t)(unicode >> 12)) | 0xe0;
+			*p++ = ((uint8_t)((unicode & 0x0fc0) >> 6)) | 0x80;
+			*p++ = ((uint8_t)(unicode & 0x003f)) | 0x80;
+		}
+	}
+	*p = '\0';
 #endif
 	return dst;
 }
