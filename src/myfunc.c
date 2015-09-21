@@ -89,8 +89,9 @@ char *gbk2utf(char *src, size_t srclen) {
 	uint8_t ch;
 	uint16_t unicode;
 	char *dst = (char*)malloc(srclen*3/2+1), *p = dst;
-	while((ch = (uint8_t)*src))
+	while(srclen--)
 	{
+		ch = (uint8_t)*src;
 		if(ch < 0x80)
 			unicode = ch;
 		else if(ch >= 0xa1 && ch <= 0xa9)
@@ -518,7 +519,7 @@ void fillEchoPacket(u_char *echoBuf)
 
 void getEchoKey(const u_char *capBuf)
 {
-	int i, offset = 0x1c+capBuf[0x1b]+0x69+24;	/* 通过比较了大量抓包，通用的提取点就是这样的 */
+	int i, offset = 0x1c+ntohs(*(uint16_t*)(capBuf+0x1a))+0x69+24;	/* 通过比较了大量抓包，通用的提取点就是这样的 */
 	u_char *base = (u_char *)(&echoKey);
 	for (i=0; i<4; i++)
 		base[i] = encode(capBuf[offset+i]);

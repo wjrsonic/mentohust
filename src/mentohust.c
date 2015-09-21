@@ -199,7 +199,7 @@ static void pcap_handle(u_char *user, const struct pcap_pkthdr *h, const u_char 
 static void showRuijieMsg(const u_char *buf, unsigned bufLen)
 {
 	char *serverMsg;
-	int length = buf[0x1b];
+	int length = ntohs(*(uint16_t*)(capBuf+0x1a));
 	if (length > 0) {
 		for (serverMsg=(char *)(buf+0x1c); *serverMsg=='\r'||*serverMsg=='\n'; serverMsg++,length--);	/* 跳过开头的换行符 */
 		if (strlen(serverMsg) < length)
@@ -216,7 +216,7 @@ static void showRuijieMsg(const u_char *buf, unsigned bufLen)
 			free(serverMsg);
 		}
 	}
-	if ((length=0x1c+buf[0x1b]+0x69+39) < bufLen) {
+	if ((length=0x1c+ntohs(*(uint16_t*)(capBuf+0x1a))+0x69+39) < bufLen) {
 		serverMsg=(char *)(buf+length);
 		if (buf[length-1]-2 > bufLen-length)
 			length = bufLen - length;
